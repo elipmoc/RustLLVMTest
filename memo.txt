@@ -1,0 +1,5 @@
+オブジェクトファイル生成
+llc -march=x86-64 -filetype=obj hoge.bc
+
+リンクしてexe生成
+link /machine:x64 /entry:hoge /subsystem:console hoge.obj
