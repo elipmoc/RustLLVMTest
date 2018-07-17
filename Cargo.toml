@@ -2,6 +2,11 @@
 name = "rust_llvm_Test"
 version = "0.1.0"
 authors = ["elipmoc <relipmoc101@gmail.com>"]
+build="build.rs"
+
 [dependencies]
 llvm-sys = "60"
 libc="0.2"
+[build-dependencies]
+cc = "1.0"
+

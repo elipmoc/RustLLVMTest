@@ -7,6 +7,11 @@ use my_llvm::target::*;
 use my_llvm::types::*;
 use my_llvm::value::*;
 
+#[link(name = "foo", kind = "static")]
+extern "C" {
+    fn foo();
+}
+
 fn main() {
     init_llvm_all_target();
     let codegen = CodeGenerator::new();
@@ -43,4 +48,7 @@ fn main() {
     let func_result = exe_engin.run_function(main_function, vec![]);
     println!("{}", generic_value_to_int(func_result, false));*/
     module.dispose_module();
+    unsafe {
+        foo();
+    }
 }
