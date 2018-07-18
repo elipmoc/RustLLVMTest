@@ -6,12 +6,8 @@ use my_llvm::generic_value::*;
 use my_llvm::target::*;
 use my_llvm::types::*;
 use my_llvm::value::*;
+use std::process::Command;
 
-/*#[link(name = "foo", kind = "static")]
-extern "C" {
-    fn foo();
-}
-*/
 fn extern_foo(module: &Module) -> Function {
     let function_type = function_type(void_type(), vec![]);
     let function = Function::new("foo", &module, function_type);
@@ -48,16 +44,27 @@ fn main() {
     module.set_data_layout(target_machine.create_data_layout());
     module.set_target_triple(target_machine.target_triple);
     module.write_bitcode_to_file("hoge.bc");
-    /*  linkin_interpreter();
-    let mut exe_engin = ExecutionEngine::new();
-    if let Some(err_msg) = exe_engin.create_interpreter_for_module(&module) {
-        panic!("llvm error:{}", err_msg);
-    }
-    let main_function = module.get_named_function("main");
-    let func_result = exe_engin.run_function(main_function, vec![]);
-    println!("{}", generic_value_to_int(func_result, false));*/
     module.dispose_module();
-    /*unsafe {
-        foo();
-    }*/
+
+    let current_dir = std::env::current_dir()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
+    if cfg!(target_os = "windows") {
+        Command::new("cmd")
+            .args(&["/C", "llc", "-march=x86-64", "-filetype=obj", "hoge.bc"])
+            .output()
+            .expect("failed to execute process");
+        Command::new("cmd")
+            .args(&[
+                "/C",
+                &(current_dir.clone() + "\\compile.bat"),
+                &(current_dir + "\\hoge.obj"),
+            ])
+            .output()
+            .expect("failed to execute process")
+    } else {
+        panic!("support windows only!!")
+    };
 }
