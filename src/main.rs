@@ -7,19 +7,28 @@ use my_llvm::target::*;
 use my_llvm::types::*;
 use my_llvm::value::*;
 
-#[link(name = "foo", kind = "static")]
+/*#[link(name = "foo", kind = "static")]
 extern "C" {
     fn foo();
+}
+*/
+fn extern_foo(module: &Module) -> Function {
+    let function_type = function_type(void_type(), vec![]);
+    let function = Function::new("foo", &module, function_type);
+    setLinkage(function.llvm_function, LLVMLinkage::LLVMExternalLinkage);
+    function
 }
 
 fn main() {
     init_llvm_all_target();
     let codegen = CodeGenerator::new();
     let module = Module::new("my_module");
+    let foo_func = extern_foo(&module);
     let function_type = function_type(int32_type(), vec![]);
-    let function = Function::new("hoge", &module, function_type);
+    let function = Function::new("main", &module, function_type);
     let entry_block = function.append_basic_block("entry");
     codegen.position_builder_at_end(entry_block);
+    codegen.build_call(foo_func.llvm_function, vec![], "");
     let a_value = codegen.build_alloca(int32_type(), "a");
     codegen.build_store(const_int(int32_type(), 114, false), a_value);
     let b_value = codegen.build_load(a_value, "b");
@@ -48,7 +57,7 @@ fn main() {
     let func_result = exe_engin.run_function(main_function, vec![]);
     println!("{}", generic_value_to_int(func_result, false));*/
     module.dispose_module();
-    unsafe {
+    /*unsafe {
         foo();
-    }
+    }*/
 }

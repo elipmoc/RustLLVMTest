@@ -1,12 +1,16 @@
 extern crate llvm_sys as llvm;
+use self::llvm::prelude::{
+    LLVMBasicBlockRef, LLVMBuilderRef, LLVMContextRef, LLVMModuleRef, LLVMTypeRef, LLVMValueRef,
+};
 use super::function::Function;
 use std::ffi::CString;
 use std::os::raw::c_char;
 
 pub struct CodeGenerator {
-    builder: *mut llvm::LLVMBuilder,
-    context: *mut llvm::LLVMContext,
+    builder: LLVMBuilderRef,
+    context: LLVMContextRef,
 }
+
 impl CodeGenerator {
     pub fn new() -> CodeGenerator {
         unsafe {
@@ -17,47 +21,57 @@ impl CodeGenerator {
         }
     }
 
-    pub fn position_builder_at_end(&self, block: *mut llvm::LLVMBasicBlock) {
+    pub fn position_builder_at_end(&self, block: LLVMBasicBlockRef) {
         unsafe {
             llvm::core::LLVMPositionBuilderAtEnd(self.builder, block);
         }
     }
 
-    pub fn build_alloca(&self, llvm_type: *mut llvm::LLVMType, name: &str) -> *mut llvm::LLVMValue {
+    pub fn build_alloca(&self, llvm_type: LLVMTypeRef, name: &str) -> LLVMValueRef {
         let name = CString::new(name).unwrap();
         unsafe { llvm::core::LLVMBuildAlloca(self.builder, llvm_type, name.as_ptr()) }
     }
 
-    pub fn build_load(
-        &self,
-        source: *mut llvm::LLVMValue,
-        dest_name: &str,
-    ) -> *mut llvm::LLVMValue {
+    pub fn build_load(&self, source: LLVMValueRef, dest_name: &str) -> LLVMValueRef {
         let dest_name = CString::new(dest_name).unwrap();
         unsafe { llvm::core::LLVMBuildLoad(self.builder, source, dest_name.as_ptr()) }
     }
 
-    pub fn build_store(
-        &self,
-        source: *mut llvm::LLVMValue,
-        dest: *mut llvm::LLVMValue,
-    ) -> *mut llvm::LLVMValue {
+    pub fn build_store(&self, source: LLVMValueRef, dest: LLVMValueRef) -> LLVMValueRef {
         unsafe { llvm::core::LLVMBuildStore(self.builder, source, dest) }
     }
 
-    pub fn build_ret(&self, val: *mut llvm::LLVMValue) -> *mut llvm::LLVMValue {
+    pub fn build_ret(&self, val: LLVMValueRef) -> LLVMValueRef {
         unsafe { llvm::core::LLVMBuildRet(self.builder, val) }
     }
 
     pub fn dispose_builder(&self) {
         unsafe { llvm::core::LLVMDisposeBuilder(self.builder) }
     }
+
+    pub fn build_call(
+        &self,
+        func: LLVMValueRef,
+        mut args: Vec<LLVMValueRef>,
+        name: &str,
+    ) -> LLVMValueRef {
+        unsafe {
+            let name = CString::new(name).unwrap();
+            llvm::core::LLVMBuildCall(
+                self.builder,
+                func,
+                args.as_mut_ptr(),
+                args.len() as u32,
+                name.as_ptr(),
+            )
+        }
+    }
 }
 
 use super::types::{TargetDataRef, TargetTriple};
 #[derive(Clone)]
 pub struct Module {
-    pub llvm_module: *mut llvm::LLVMModule,
+    pub llvm_module: LLVMModuleRef,
 }
 
 impl Module {
@@ -88,7 +102,7 @@ impl Module {
         }
     }
 
-    pub fn get_named_function(&self, f_name: &str) -> *mut llvm::LLVMValue {
+    pub fn get_named_function(&self, f_name: &str) -> LLVMValueRef {
         let f_name = CString::new(f_name).unwrap();
         unsafe { llvm::core::LLVMGetNamedFunction(self.llvm_module, f_name.as_ptr()) }
     }

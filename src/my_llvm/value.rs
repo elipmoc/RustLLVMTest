@@ -7,3 +7,10 @@ pub fn const_int(
 ) -> *mut llvm::LLVMValue {
     unsafe { llvm::core::LLVMConstInt(llvm_type, val, if sign_flag { 1 } else { 0 }) }
 }
+
+use self::llvm::prelude::LLVMValueRef;
+pub use self::llvm::LLVMLinkage;
+
+pub fn setLinkage(global_value: LLVMValueRef, linkage: LLVMLinkage) {
+    unsafe { llvm::core::LLVMSetLinkage(global_value, linkage) }
+}

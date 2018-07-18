@@ -3,15 +3,17 @@ use std::os::raw::c_char;
 
 pub type TargetDataRef = *mut llvm::target::LLVMOpaqueTargetData;
 pub type TargetTriple = *mut c_char;
+use self::llvm::prelude::LLVMTypeRef;
 
-pub fn int32_type() -> *mut llvm::LLVMType {
+pub fn int32_type() -> LLVMTypeRef {
     unsafe { llvm::core::LLVMInt32Type() }
 }
 
-pub fn function_type(
-    ret_type: *mut llvm::LLVMType,
-    mut param_types: Vec<*mut llvm::LLVMType>,
-) -> *mut llvm::LLVMType {
+pub fn void_type() -> LLVMTypeRef {
+    unsafe { llvm::core::LLVMVoidType() }
+}
+
+pub fn function_type(ret_type: LLVMTypeRef, mut param_types: Vec<LLVMTypeRef>) -> LLVMTypeRef {
     unsafe {
         let function_type = llvm::core::LLVMFunctionType(
             ret_type,
