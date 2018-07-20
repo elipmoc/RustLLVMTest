@@ -45,8 +45,11 @@ impl CodeGenerator {
         unsafe { llvm::core::LLVMBuildRet(self.builder, val) }
     }
 
-    pub fn dispose_builder(&self) {
-        unsafe { llvm::core::LLVMDisposeBuilder(self.builder) }
+    pub fn dispose(&self) {
+        unsafe {
+            llvm::core::LLVMDisposeBuilder(self.builder);
+            llvm::core::LLVMContextDispose(self.context);
+        }
     }
 
     pub fn build_call(

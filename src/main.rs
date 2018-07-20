@@ -32,7 +32,6 @@ fn main() {
     if let Some(err_msg) = module.verify_module() {
         panic!("llvm error:{}", err_msg);
     }
-    codegen.dispose_builder();
     module.dump_module();
     let target_machine = TargetMachine::create(
         "generic",
@@ -44,7 +43,10 @@ fn main() {
     module.set_data_layout(target_machine.create_data_layout());
     module.set_target_triple(target_machine.target_triple);
     module.write_bitcode_to_file("hoge.bc");
+    target_machine.emit_to_file(&module, "hoge.obj", LLVMCodeGenFileType::LLVMObjectFile);
     module.dispose_module();
+    codegen.dispose();
+    target_machine.dispose();
 
     let current_dir = std::env::current_dir()
         .unwrap()
@@ -52,10 +54,6 @@ fn main() {
         .unwrap()
         .to_string();
     if cfg!(target_os = "windows") {
-        Command::new("cmd")
-            .args(&["/C", "llc", "-march=x86-64", "-filetype=obj", "hoge.bc"])
-            .output()
-            .expect("failed to execute process");
         Command::new("cmd")
             .args(&[
                 "/C",

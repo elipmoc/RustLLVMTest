@@ -1,6 +1,13 @@
 use std::os::raw::c_char;
 extern crate llvm_sys as llvm;
+use self::llvm::target_machine::*;
+pub use self::llvm::target_machine::{
+    LLVMCodeGenFileType, LLVMCodeGenOptLevel, LLVMCodeModel, LLVMDisposeTargetMachine,
+    LLVMRelocMode,
+};
 use std::ffi::CString;
+
+use super::types::{TargetDataRef, TargetTriple};
 
 pub fn init_llvm_native_target() {
     unsafe {
@@ -30,14 +37,6 @@ pub struct TargetMachine {
     llvm_target_machine: LLVMTargetMachineRef,
     pub target_triple: TargetTriple,
 }
-
-pub use self::llvm::target_machine::{LLVMCodeGenOptLevel, LLVMCodeModel, LLVMRelocMode};
-use self::llvm::target_machine::{
-    LLVMCreateTargetDataLayout, LLVMCreateTargetMachine, LLVMGetDefaultTargetTriple,
-    LLVMGetTargetFromTriple, LLVMTargetMachineRef, LLVMTargetRef,
-};
-
-use super::types::{TargetDataRef, TargetTriple};
 
 impl TargetMachine {
     pub fn create(
@@ -71,6 +70,36 @@ impl TargetMachine {
 
     pub fn create_data_layout(&self) -> TargetDataRef {
         unsafe { LLVMCreateTargetDataLayout(self.llvm_target_machine) }
+    }
+
+    pub fn dispose(self) {
+        unsafe { LLVMDisposeTargetMachine(self.llvm_target_machine) }
+    }
+
+    //moduleを形式を指定してファイルの保存
+    pub fn emit_to_file(
+        &self,
+        module: &super::core::Module,
+        file_name: &str,
+        file_type: LLVMCodeGenFileType,
+    ) -> Option<String> {
+        let mut error: *mut c_char = 0 as *mut c_char;
+        let buf: *mut *mut c_char = &mut error;
+        let mut file_name = CString::new(file_name).unwrap();
+        unsafe {
+            let ok = LLVMTargetMachineEmitToFile(
+                self.llvm_target_machine,
+                module.llvm_module,
+                file_name.into_raw(),
+                file_type,
+                buf,
+            );
+            if ok == 0 {
+                Option::None
+            } else {
+                Option::Some(CString::from_raw(error).into_string().unwrap())
+            }
+        }
     }
 }
 
