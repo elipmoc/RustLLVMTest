@@ -11,6 +11,6 @@ pub fn const_int(
 use self::llvm::prelude::LLVMValueRef;
 pub use self::llvm::LLVMLinkage;
 
-pub fn setLinkage(global_value: LLVMValueRef, linkage: LLVMLinkage) {
+pub fn set_linkage(global_value: LLVMValueRef, linkage: LLVMLinkage) {
     unsafe { llvm::core::LLVMSetLinkage(global_value, linkage) }
 }

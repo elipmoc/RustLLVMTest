@@ -5,7 +5,7 @@ pub use self::llvm::target_machine::{
     LLVMCodeGenFileType, LLVMCodeGenOptLevel, LLVMCodeModel, LLVMDisposeTargetMachine,
     LLVMRelocMode,
 };
-use std::ffi::CString;
+use super::helper::{ram_to_string, string_cast, string_cast_mut};
 
 use super::types::{TargetDataRef, TargetTriple};
 
@@ -46,16 +46,16 @@ impl TargetMachine {
         reloc: LLVMRelocMode,
         code_model: LLVMCodeModel,
     ) -> Result<TargetMachine, String> {
-        let cpu = CString::new(cpu).unwrap();
-        let features = CString::new(features).unwrap();
+        let cpu = string_cast(cpu);
+        let features = string_cast(features);
         unsafe {
             let target_triple = LLVMGetDefaultTargetTriple();
             let target = try!{get_target_from_triple(target_triple)};
             let llvm_target_machine = LLVMCreateTargetMachine(
                 target,
                 target_triple,
-                cpu.as_ptr(),
-                features.as_ptr(),
+                cpu,
+                features,
                 level,
                 reloc,
                 code_model,
@@ -85,19 +85,19 @@ impl TargetMachine {
     ) -> Option<String> {
         let mut error: *mut c_char = 0 as *mut c_char;
         let buf: *mut *mut c_char = &mut error;
-        let mut file_name = CString::new(file_name).unwrap();
+        let mut file_name = string_cast_mut(file_name);
         unsafe {
             let ok = LLVMTargetMachineEmitToFile(
                 self.llvm_target_machine,
                 module.llvm_module,
-                file_name.into_raw(),
+                file_name,
                 file_type,
                 buf,
             );
             if ok == 0 {
                 Option::None
             } else {
-                Option::Some(CString::from_raw(error).into_string().unwrap())
+                Option::Some(ram_to_string(error))
             }
         }
     }
@@ -112,7 +112,7 @@ fn get_target_from_triple(triple: *const c_char) -> Result<LLVMTargetRef, String
         if ok == 0 {
             Result::Ok(target)
         } else {
-            Result::Err(CString::from_raw(error).into_string().unwrap())
+            Result::Err(ram_to_string(error))
         }
     }
 }

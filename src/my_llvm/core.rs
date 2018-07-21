@@ -127,7 +127,7 @@ impl Module {
         unsafe { llvm::core::LLVMSetTarget(self.llvm_module, target_triple) }
     }
 
-    pub fn get_memoryBufferRef(&self) -> llvm::prelude::LLVMMemoryBufferRef {
+    pub fn get_memory_buffer_ref(&self) -> llvm::prelude::LLVMMemoryBufferRef {
         unsafe { llvm::bit_writer::LLVMWriteBitcodeToMemoryBuffer(self.llvm_module) }
     }
 
