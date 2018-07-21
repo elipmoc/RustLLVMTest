@@ -1,12 +1,5 @@
 mod my_llvm;
-use my_llvm::core::*;
-use my_llvm::execution_engine::*;
-use my_llvm::function::*;
-use my_llvm::generic_value::*;
-use my_llvm::pass::*;
-use my_llvm::target::*;
-use my_llvm::types::*;
-use my_llvm::value::*;
+use my_llvm::easy::*;
 use std::process::Command;
 
 fn extern_foo(module: &Module) -> Function {

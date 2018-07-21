@@ -1,7 +1,4 @@
-use self::llvm::core::{
-    LLVMCreateFunctionPassManagerForModule, LLVMDisposePassManager,
-    LLVMInitializeFunctionPassManager, LLVMRunFunctionPassManager,
-};
+use self::llvm::core::*;
 use self::llvm::prelude::*;
 use self::llvm::transforms::scalar::LLVMAddPromoteMemoryToRegisterPass;
 extern crate llvm_sys as llvm;
@@ -11,7 +8,7 @@ pub struct FunctionPassManager {
 }
 
 impl FunctionPassManager {
-    pub fn new(module: &super::core::Module) -> FunctionPassManager {
+    pub fn new(module: &super::module::Module) -> FunctionPassManager {
         unsafe {
             let pass_ref = LLVMCreateFunctionPassManagerForModule(module.llvm_module);
             FunctionPassManager {

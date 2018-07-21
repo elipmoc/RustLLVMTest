@@ -1,6 +1,7 @@
 extern crate llvm_sys as llvm;
 use self::llvm::execution_engine as llex;
-use std::ffi::CString;
+use self::llvm::prelude::*;
+use super::helper::*;
 use std::os::raw::c_char;
 
 pub fn linkin_interpreter() {
@@ -21,23 +22,22 @@ impl ExecutionEngine {
 
     pub fn create_interpreter_for_module(
         &mut self,
-        module: &super::core::Module,
+        module: &super::module::Module,
     ) -> Option<String> {
         let mut error = 0 as *mut c_char;
         let ok = unsafe {
-            let buf: *mut *mut c_char = &mut error;
-            llex::LLVMCreateInterpreterForModule(&mut self.engine, module.llvm_module, buf)
+            llex::LLVMCreateInterpreterForModule(&mut self.engine, module.llvm_module, &mut error)
         };
         if ok == 0 {
             Option::None
         } else {
-            Option::Some(unsafe { CString::from_raw(error).into_string().unwrap() })
+            Option::Some(unsafe { ram_to_string(error) })
         }
     }
 
     pub fn run_function(
         &self,
-        function: *mut llvm::LLVMValue,
+        function: LLVMValueRef,
         mut params: Vec<llex::LLVMGenericValueRef>,
     ) -> llex::LLVMGenericValueRef {
         unsafe {
@@ -49,8 +49,4 @@ impl ExecutionEngine {
             )
         }
     }
-}
-
-pub fn excalibur() {
-    panic!("Excalibur error!");
 }

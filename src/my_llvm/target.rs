@@ -2,10 +2,9 @@ use std::os::raw::c_char;
 extern crate llvm_sys as llvm;
 use self::llvm::target_machine::*;
 pub use self::llvm::target_machine::{
-    LLVMCodeGenFileType, LLVMCodeGenOptLevel, LLVMCodeModel, LLVMDisposeTargetMachine,
-    LLVMRelocMode,
+    LLVMCodeGenFileType, LLVMCodeGenOptLevel, LLVMCodeModel, LLVMRelocMode,
 };
-use super::helper::{ram_to_string, string_cast, string_cast_mut};
+use super::helper::*;
 
 use super::types::{TargetDataRef, TargetTriple};
 
@@ -46,16 +45,14 @@ impl TargetMachine {
         reloc: LLVMRelocMode,
         code_model: LLVMCodeModel,
     ) -> Result<TargetMachine, String> {
-        let cpu = string_cast(cpu);
-        let features = string_cast(features);
         unsafe {
             let target_triple = LLVMGetDefaultTargetTriple();
             let target = try!{get_target_from_triple(target_triple)};
             let llvm_target_machine = LLVMCreateTargetMachine(
                 target,
                 target_triple,
-                cpu,
-                features,
+                string_cast(cpu).as_ptr(),
+                string_cast(features).as_ptr(),
                 level,
                 reloc,
                 code_model,
@@ -79,20 +76,18 @@ impl TargetMachine {
     //moduleを形式を指定してファイルの保存
     pub fn emit_to_file(
         &self,
-        module: &super::core::Module,
+        module: &super::module::Module,
         file_name: &str,
         file_type: LLVMCodeGenFileType,
     ) -> Option<String> {
         let mut error: *mut c_char = 0 as *mut c_char;
-        let buf: *mut *mut c_char = &mut error;
-        let mut file_name = string_cast_mut(file_name);
         unsafe {
             let ok = LLVMTargetMachineEmitToFile(
                 self.llvm_target_machine,
                 module.llvm_module,
-                file_name,
+                string_cast(file_name).into_raw(),
                 file_type,
-                buf,
+                &mut error,
             );
             if ok == 0 {
                 Option::None
@@ -107,8 +102,7 @@ fn get_target_from_triple(triple: *const c_char) -> Result<LLVMTargetRef, String
     let mut target: LLVMTargetRef = 0 as LLVMTargetRef;
     let mut error: *mut c_char = 0 as *mut c_char;
     unsafe {
-        let buf: *mut *mut c_char = &mut error;
-        let ok = LLVMGetTargetFromTriple(triple, &mut target, buf);
+        let ok = LLVMGetTargetFromTriple(triple, &mut target, &mut error);
         if ok == 0 {
             Result::Ok(target)
         } else {
